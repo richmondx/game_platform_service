@@ -2,7 +2,7 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :tcp_connection, port: 4040, ranch_handler_count: 2
+config :tcp_connection, port: 4040, ranch_handler_count: 10
 config :tcp_connection_worker, responder_flush_delay: 5, parser_flush_delay: 5, router_flush_delay: 5, responder_force_flush_max: 20, parser_force_flush_max: 20, router_force_flush_max: 20
 
 # This configuration is loaded before any dependency and is restricted

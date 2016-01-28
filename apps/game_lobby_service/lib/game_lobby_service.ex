@@ -7,6 +7,7 @@ defmodule LobbyService do
     import Supervisor.Spec, warn: false
     children = [
       # Define workers and child supervisors to be supervised
+      supervisor(RoutingServiceSupervisor, []),
       worker(TcpConnection, []),
       worker(EchoService, [])
     ]
