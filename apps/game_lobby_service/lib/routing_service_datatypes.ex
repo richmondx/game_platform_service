@@ -49,7 +49,7 @@ defmodule RoutingServiceRouterState do
   defstruct [send_message_queue: [], send_message_size: 0]
 end
 defmodule RoutingServiceTransactionManagerState do
-  defstruct [active_transactions: [], last_transaction_id: 0, pending_transactions: []]
+  defstruct [active_transactions: [], last_transaction_id: 0]
 end
 defmodule RoutingServiceTransactionReceipt do
   defstruct [transaction_id: -1, transaction_service_route: nil,  transaction_message: nil, connection_id: -1, request_message_id: -1, request_time: -1, fullfillment_message_id: -1, response_time: -1, transaction_ttl_ms: 1000 ]

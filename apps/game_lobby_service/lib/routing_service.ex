@@ -10,6 +10,7 @@ defmodule RoutingServiceSupervisor do
     children = [
       supervisor(Task.Supervisor, [[name: String.to_atom("routing_service_task_supervisor") ]]),
       worker(RoutingServiceTransactionManager, []),
+      worker(TransactionManagerRepo, []),
       worker(RoutingServiceConnectionRegister, []),
       worker(RoutingServiceRouter, [])
     ]
