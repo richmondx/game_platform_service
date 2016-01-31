@@ -75,6 +75,7 @@ defmodule RoutingServiceTransactionManager do
       client = GenServer.call(:routing_service_register_worker, {:get_client_by_connection_id, t.connection_id})
       {name, c} = client
       send c.client_responder_pid, {:send_tcp_message, msg}
+      GenServer.cast(:routing_service_transaction_repo, {:remove, t})
     end)
     {:noreply, state}
   end

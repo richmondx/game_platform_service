@@ -32,4 +32,9 @@ defmodule TransactionManagerRepo do
     :ets.insert( Map.get(state, :repo),  {k, Map.from_struct(item)}  )
     {:noreply, state}
   end
+  def handle_cast({:remove, transaction}, state) do
+    k = build_key(transaction.transaction_id)
+    :ets.delete(Map.get(state, :repo), k)
+    {:noreply, state}
+  end
 end
