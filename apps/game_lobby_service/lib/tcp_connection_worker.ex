@@ -16,7 +16,7 @@ defmodule TcpConnectionWorker do
     Process.register(responder_pid, String.to_atom("tcpconnection_worker_responder_"<>Integer.to_string(connection_id)) )
     Process.register(router_pid, String.to_atom("tcpconnection_worker_router_"<>Integer.to_string(connection_id)) )
     Process.register(parser_pid, String.to_atom("tcpconnection_worker_parser_"<>Integer.to_string(connection_id)) )
-    send String.to_atom("routing_service_register"), {:add_client, connection_id, responder_pid} 
+    send String.to_atom("routing_service_register"), {:add_client, connection_id, responder_pid}
     Process.flag(:trap_exit, true)
     loop(socket, transport, connection_id, parser_pid)
   end
@@ -94,7 +94,10 @@ defmodule TcpConnectionWorker do
     end
   end
   defp loop(socket, transport, connection_id, parser_loop) do
-    {:ok, packet} = transport.recv(socket, 0, 5000)
+    {:ok, packet} = case transport.recv(socket, 0, 50) do
+      {:ok, packet}->{:ok, packet}
+      {:error, :timeout}->loop(socket, transport, connection_id, parser_loop)
+    end
     hacked_packet = case packet do
       "05hello"-><<0::size(8), 5::size(32)>> <> <<"hello">> <> <<0::size(8)>>
       other->other

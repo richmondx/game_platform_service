@@ -48,6 +48,9 @@ end
 defmodule RoutingServiceRouterState do
   defstruct [send_message_queue: [], send_message_size: 0]
 end
+defmodule RoutingServiceTransactionPoolWorkerState do
+      defstruct [active_transactions: [], last_transaction_id: 0]
+end
 defmodule RoutingServiceTransactionManagerState do
   defstruct [active_transactions: [], last_transaction_id: 0]
 end
@@ -68,5 +71,5 @@ defmodule RoutingServiceRouterOperationFactory do
   end
 end
 defmodule QueuedTransactionResponse do
-  defstruct [message: nil, transaction_id: -1]
+  defstruct [message: nil, transaction_id: -1, response_pid: nil]
 end

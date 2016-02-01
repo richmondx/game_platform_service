@@ -18,7 +18,7 @@ defmodule LobbyService.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-      [applications: [:logger, :ranch],
+      [applications: [:logger, :ranch, :poolboy],
        mod: {LobbyService, []}]
   end
 
@@ -32,6 +32,6 @@ defmodule LobbyService.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:ranch, "~> 1.2"}]
+    [{:ranch, "~> 1.2"}, {:poolboy, "~> 1.5"}]
   end
 end

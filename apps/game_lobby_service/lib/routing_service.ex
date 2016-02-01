@@ -9,6 +9,7 @@ defmodule RoutingServiceSupervisor do
   def init(:ok) do
     children = [
       supervisor(Task.Supervisor, [[name: String.to_atom("routing_service_task_supervisor") ]]),
+      supervisor(RoutingServiceTransactionPool, []),
       worker(RoutingServiceTransactionManager, []),
       worker(TransactionManagerRepo, []),
       worker(ConnectionRegisterRepo, []),

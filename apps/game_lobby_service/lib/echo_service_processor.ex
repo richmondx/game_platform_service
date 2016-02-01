@@ -21,22 +21,22 @@ defmodule EchoServiceProcessor do
       service_loop(0)
     end
     receive do
-      {:process_transaction, msg, transaction_id} ->
+      {:process_transaction, msg, transaction_id, response_pid} ->
         resp = %TcpEchoMessageResponse{ message: msg.message}
-        GenServer.cast(:echo_service_worker, {:add_transaction_response, resp, transaction_id})
+        GenServer.cast(:echo_service_worker, {:add_transaction_response, resp, transaction_id, response_pid})
         service_loop(transaction_count + 1)
       after
-        50->
+        5->
           GenServer.call(:echo_service_worker, {:flush_transactions_sync})
           service_loop(0)
     end
   end
-  def handle_cast({:add_transaction_response, msg, transaction_id}, state) do
-    {:noreply, [%QueuedTransactionResponse{message: msg, transaction_id: transaction_id} | state]}
+  def handle_cast({:add_transaction_response, msg, transaction_id, response_pid}, state) do
+    {:noreply, [%QueuedTransactionResponse{message: msg, transaction_id: transaction_id, response_pid: response_pid} | state]}
   end
   def handle_call({:flush_transactions_sync}, _from, state) do
     for s <- state do
-      send(:routing_service_transaction, {:fullfill_request_transaction, s.message, s.transaction_id} )
+      send(s.response_pid, {:fullfill_request_transaction, s.message, s.transaction_id} )
     end
     {:reply, :ok, []}
   end
