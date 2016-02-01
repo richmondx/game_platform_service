@@ -1,5 +1,7 @@
 # GamePlatformService
 
-* see apps directory for platform applications
+* project planner: https://github.com/Alezrik/game_platform_service
+* 
+* related development blog: https://excavationofimagination.wordpress.com/
 
-**TODO: Add description**
+
