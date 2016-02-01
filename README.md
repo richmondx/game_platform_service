@@ -1,6 +1,6 @@
 # GamePlatformService
 
-* project planner: https://github.com/Alezrik/game_platform_service
+* project planner: https://xelbrec.myjetbrains.com
 * related development blog: https://excavationofimagination.wordpress.com/
 
 
