@@ -60,6 +60,7 @@ defmodule RoutingServiceConnectionRegister do
 
   def handle_info({:DOWN, ref, :process, pid, _reason}, state) do
     Task.Supervisor.start_child( :routing_service_task_supervisor , fn ->
+      
       GenServer.cast(:routing_service_register_repo, {:remove_pid, pid}) end)
     {:noreply, state}
   end

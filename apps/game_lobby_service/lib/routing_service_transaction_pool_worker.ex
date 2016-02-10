@@ -13,7 +13,7 @@ defmodule RoutingServiceTransactionPoolWorker do
     String.to_atom("routing_service_transaction_pool")
   end
   def receiver(gen_server) do
-    
+
     receiver_loop(gen_server)
   end
   defp receiver_loop(gen_server) do
@@ -33,7 +33,7 @@ defmodule RoutingServiceTransactionPoolWorker do
     Task.Supervisor.start_child(:routing_service_task_supervisor, fn ->
       for receipt<-state.active_transactions do
         service_route = receipt.transaction_service_route
-        send service_route.service_entry_pid, {:process_transaction, receipt.transaction_message, receipt.transaction_id, response_pid}
+        send service_route.service_entry_pid, {:process_transaction, receipt.transaction_message, receipt.transaction_id, response_pid, receipt.connection_id}
       end
     end)
     for i<- state.active_transactions do
@@ -63,8 +63,9 @@ defmodule RoutingServiceTransactionPoolWorker do
   end
   def handle_cast({:flush_queue}, state) do
     for receipt<-state.active_transactions do
+
       service_route = receipt.transaction_service_route
-      send service_route.service_entry_pid, {:process_transaction, receipt.transaction_message, receipt.transaction_id}
+      send service_route.service_entry_pid, {:process_transaction, receipt.transaction_message, receipt.transaction_id, receipt.connection_id}
     end
     for i<- state.active_transactions do
       #:ets.insert(state.pending_transactions, {String.to_atom(Integer.to_string(i.transaction_id)), Map.from_struct(i)})
@@ -79,7 +80,10 @@ defmodule RoutingServiceTransactionPoolWorker do
         request_time: :os.timestamp(),
         fullfillment_message_id: operation.fullfillment_message_id,
         connection_id: connection_id, transaction_service_route: destination, transaction_message: message}
-    {:noreply, Map.update!(Map.update!(state, :active_transactions, fn l -> [rec | l]
+
+    {:noreply, Map.update!(Map.update!(state, :active_transactions, fn l ->
+
+       [rec | l]
       end), :last_transaction_id, fn i-> i+1 end) }
   end
 

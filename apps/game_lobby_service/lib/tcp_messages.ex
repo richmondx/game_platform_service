@@ -15,3 +15,11 @@ defmodule TcpEchoMessageResponse do
   require TcpMessage
   defstruct [header: %TcpMessageHeader{message_id: 1}, message: ""]
 end
+defmodule TcpAuthenticateSessionMessage do
+  require TcpMessage
+  defstruct [header: %TcpMessageHeader{message_id: 2}, principal: "", password: ""]
+end
+defmodule TcpAuthenticateSessionMessageResponse do
+  require TcpMessage
+  defstruct [header: %TcpMessageHeader{message_id: 3}, authenticate_success: false, authenticate_message: "", authenticate_token: ""]
+end

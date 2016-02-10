@@ -36,6 +36,7 @@ defmodule AccountIdentityWorkflow do
         {:ok, created_account} = GenServer.call(:account_identity_workflow_worker, {:create_account, account})
         send(notifier, {:create_account_response, :ok, created_account})
       end)
+      account_identity_service_loop()
     end
   end
   def handle_call({:create_account, account}, _from, state ) do
@@ -43,9 +44,29 @@ defmodule AccountIdentityWorkflow do
       user = IdentityRepo.insert!(userToCreate)
       {:reply, {:ok, user}, state}
   end
+
+  def handle_call({:get_account_by_principal, principal}, _from, state) do
+    user = IdentityRepo.get_by(AccountIdentityModel, principal: principal)
+    {:reply, {:ok, user}, state}
+  end
   def handle_call({:initialize_database}, _from, state) do
     q = from m in AccountIdentityModel
     IdentityRepo.delete_all(q)
     {:reply, {:ok}, state}
+  end
+  def handle_cast({:remove_session_id, session_id}, state) do
+    case IdentityRepo.get_by(AccountIdentityModel, login_session: session_id) do
+      nil-> Logger.info "no account found"
+      account->
+        update_account = Ecto.Changeset.change account, login_session: nil
+        IdentityRepo.update update_account
+    end
+
+    {:noreply, state}
+  end
+  def handle_cast({:set_login_session, session_id, account}, state) do
+    update_account = Ecto.Changeset.change account, login_session: session_id
+    IdentityRepo.update update_account
+    {:noreply,  state}
   end
 end

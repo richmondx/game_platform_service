@@ -18,10 +18,11 @@ defmodule RoutingServiceTransactionManager do
     receive do
 
       {:queue_transaction, transactional_message, transactional_op, connection_id} ->
+
         service_transaction([ %{transactional_message: transactional_message, transactional_op: transactional_op, connection_id: connection_id} | queueList ])
       after
         5->
-          for trans<-queueList do
+          for trans<-queueList do  
             Task.Supervisor.start_child(:routing_service_task_supervisor, fn ->
               :poolboy.transaction(worker_pool_name(), fn(pid)->
                 {:service, service} = GenServer.call(:routing_service_register_worker , {:get_service_by_op, Map.get(trans, :transactional_op)})

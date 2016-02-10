@@ -38,6 +38,7 @@ defmodule IdentityService.Mixfile do
   defp deps do
     [{:mongodb_ecto, "~> 0.1"},
     {:guardian, "~> 0.9.0"},
-    {:aeacus, "~> 0.3.0"}]
+    {:aeacus, "~> 0.3.0"},
+    {:credo, "~> 0.3", only: [:dev, :test]}]
   end
 end

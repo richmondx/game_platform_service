@@ -14,6 +14,7 @@ defmodule TcpConnectionWorker do
     router_pid = spawn_link(__MODULE__, :router_loop, [[], [], responder_pid])
     parser_pid = spawn_link(__MODULE__, :parser_loop,[<<>>, [], 0, router_pid, connection_id])
     Process.register(responder_pid, String.to_atom("tcpconnection_worker_responder_"<>Integer.to_string(connection_id)) )
+    Process.send :session_identity_workflow, {:create_session, connection_id, Node.self()}, []
     Process.register(router_pid, String.to_atom("tcpconnection_worker_router_"<>Integer.to_string(connection_id)) )
     Process.register(parser_pid, String.to_atom("tcpconnection_worker_parser_"<>Integer.to_string(connection_id)) )
     send String.to_atom("routing_service_register"), {:add_client, connection_id, responder_pid}
@@ -99,7 +100,8 @@ defmodule TcpConnectionWorker do
       {:error, :timeout}->loop(socket, transport, connection_id, parser_loop)
     end
     hacked_packet = case packet do
-      "05hello"-><<0::size(8), 5::size(32)>> <> <<"hello">> <> <<0::size(8)>>
+      "05hello"->
+        <<0::size(8), 5::size(32)>> <> <<"hello">> <> <<0::size(8)>>
       other->other
     end
     send(parser_loop, {:parse_packet, hacked_packet})

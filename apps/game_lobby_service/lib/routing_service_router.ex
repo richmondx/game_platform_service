@@ -19,6 +19,7 @@ defmodule RoutingServiceRouter do
         service_op = RoutingServiceRouterOperationFactory.getOperationByMessageId(message.header.message_id)
         case service_op.transaction do
           true->
+            
             send :routing_service_transaction, {:queue_transaction, message, service_op, connection_id }
         end
     end

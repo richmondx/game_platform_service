@@ -7,5 +7,6 @@ defmodule AccountIdentityModel do
     field :account_password, :string
     field :account_enabled, :boolean, default: true
     field :account_create_date, Ecto.DateTime, default: Ecto.DateTime.utc()
+    field :login_session, :binary_id
   end
 end

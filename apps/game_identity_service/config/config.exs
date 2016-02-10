@@ -2,14 +2,18 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
+config :logger,
+  backends: [:console],
+  compile_time_purge_level: :info
+
 config :guardian, Guardian,
   allowed_algos: ["HS512"], # optional
   verify_module: Guardian.JWT,  # optional
   issuer: "GameIdentityService",
   ttl: { 30, :days },
   verify_issuer: true, # optional
-  secret_key: APPLICATION_SECRET_KEY_HERE,
-  serializer: MyApp.GuardianSerializer
+  secret_key: "APPLICATION_SECRET_KEY_HERE",
+  serializer: SessionIdentityTokenSerializer
 
   config :aeacus, Aeacus,
     repo: IdentityRepo,
@@ -22,11 +26,13 @@ config :guardian, Guardian,
 
   config :identity_repo, IdentityRepo,
     database: "identity",
-    username: "account_service",
-    password: "account_pwd",
+    username: "accounts_service",
+    password: "accounts_password",
     hostname: "localhost"
   config :account_identity_workflow,
     initialize_database: true
+    config :session_identity_workflow,
+      initialize_database: true
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this
 # file won't be loaded nor affect the parent project. For this reason,

@@ -60,6 +60,7 @@ end
     end, {:false}, Map.get(state, :client_repo))
     case is_client do
       {:true, id}->
+        send :session_identity_workflow, {:remove_session_by_connection_id, id}
       :ets.delete(Map.get(state, :client_repo), build_client_key(id))
       {:false}->
         service_id = case :ets.foldl(fn ({key, value}, acc)->

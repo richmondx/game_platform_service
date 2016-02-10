@@ -21,7 +21,7 @@ defmodule EchoServiceProcessor do
       service_loop(0)
     end
     receive do
-      {:process_transaction, msg, transaction_id, response_pid} ->
+      {:process_transaction, msg, transaction_id, response_pid, connection_id} ->
         resp = %TcpEchoMessageResponse{ message: msg.message}
         GenServer.cast(:echo_service_worker, {:add_transaction_response, resp, transaction_id, response_pid})
         service_loop(transaction_count + 1)
