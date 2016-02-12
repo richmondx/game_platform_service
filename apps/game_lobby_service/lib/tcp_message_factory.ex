@@ -31,11 +31,8 @@ defmodule TcpMessageFactory do
                   <<echo_message::binary-size(sz), remainder::binary>> ->
                     case remainder do
                       <<0::size(8), next_message::binary>>->
-                        echo_msg = %TcpEchoMessage{message: to_string(echo_message)}
-                        {:ok, echo_msg, next_message}
-                        <<0::size(8)>>->
-                          echo_msg = %TcpEchoMessage{message: msg}
-                          {:ok, echo_msg, <<>>}
+                        {:ok, %TcpEchoMessage{message: to_string(echo_message)}, next_message}
+                          <<0::size(8)>>->{:ok, %TcpEchoMessage{message: msg}, <<>>}
                     end
                   <<echo_message::binary>> ->
                     {:continued, echo_message}

@@ -80,10 +80,7 @@ defmodule RoutingServiceTransactionPoolWorker do
         request_time: :os.timestamp(),
         fullfillment_message_id: operation.fullfillment_message_id,
         connection_id: connection_id, transaction_service_route: destination, transaction_message: message}
-
-    {:noreply, Map.update!(Map.update!(state, :active_transactions, fn l ->
-
-       [rec | l]
+    {:noreply, Map.update!(Map.update!(state, :active_transactions, fn l -> [rec | l]
       end), :last_transaction_id, fn i-> i+1 end) }
   end
 
