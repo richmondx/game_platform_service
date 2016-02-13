@@ -56,9 +56,9 @@ defmodule AccountIdentityWorkflow do
   end
   def handle_cast({:remove_session_id, session_id}, state) do
     case IdentityRepo.get_by(AccountIdentityModel, login_session: session_id) do
-      nil-> Logger.info "no account found"
-      account->
-        update_account = Ecto.Changeset.change account, login_session: nil
+      nil -> nil
+      account ->
+        update_account = Ecto.Changeset.change account, login_session: ""
         IdentityRepo.update update_account
     end
 

@@ -2,7 +2,6 @@ defmodule TcpMessageFactory do
   require Logger
   def toTcpMessage(bin) when is_binary(bin)  do
     case bin do
-
       <<id ::size(8), data::binary>>->
         case id do
           2->

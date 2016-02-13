@@ -40,7 +40,7 @@ defmodule TcpConnectionWorker do
     for(resp<-response_list) do transport.send(socket, resp) end
   end
   def router_loop(items_to_route, route_list, responder_pid) do
-    if(List.foldl(route_list, 0, fn elem, acc -> (acc + 1) end ) > Application.get_env(:tcp_connection_worker, :router_force_flush_max)) do
+    if(List.foldl(route_list, 0, fn _elem, acc -> (acc + 1) end ) > Application.get_env(:tcp_connection_worker, :router_force_flush_max)) do
       flush_router(route_list, responder_pid)
       router_loop(items_to_route, [], responder_pid)
     end
@@ -94,17 +94,17 @@ defmodule TcpConnectionWorker do
       send :routing_service_router, {:route_message, msg, connection_id}
     end
   end
-  defp loop(socket, transport, connection_id, parser_loop) do
+  defp loop(socket, transport, connection_id, parser_loop_ref) do
     {:ok, packet} = case transport.recv(socket, 0, 50) do
       {:ok, packet}->{:ok, packet}
-      {:error, :timeout}->loop(socket, transport, connection_id, parser_loop)
+      {:error, :timeout}->loop(socket, transport, connection_id, parser_loop_ref)
     end
     hacked_packet = case packet do
       "05hello"->
         <<0::size(8), 5::size(32)>> <> <<"hello">> <> <<0::size(8)>>
       other->other
     end
-    send(parser_loop, {:parse_packet, hacked_packet})
-    loop(socket, transport, connection_id, parser_loop)
+    send(parser_loop_ref, {:parse_packet, hacked_packet})
+    loop(socket, transport, connection_id, parser_loop_ref)
   end
 end

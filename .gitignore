@@ -6,4 +6,5 @@ erl_crash.dump
 mix.lock
 stacks.out
 ttb_last_config
-
+.idea/
+*.iml

@@ -22,7 +22,7 @@ defmodule RoutingServiceTransactionPoolWorker do
         GenServer.cast(gen_server, {:fullfill_transaction, resp, transaction_id})
         receiver_loop(gen_server)
       after
-        5->
+        50->
           GenServer.call(gen_server,{:flush_sync, self()})
           receiver_loop(gen_server)
 
