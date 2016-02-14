@@ -1,13 +1,15 @@
 defmodule SessionIdentityWorkflow do
+  @moduledoc """
+  """
   use GenServer
   import Ecto.Query
   require Logger
   def start_link() do
     {:ok, pid} = GenServer.start_link(__MODULE__, %{}, [])
     Process.register(pid, name())
-    servicePid = spawn_link(__MODULE__,:workflow_service,[])
-    send(String.to_atom("routing_service_register"), {:add_service, :session_identity, servicePid, [:authenticate_session] })
-    Process.register(servicePid, serviceName())
+    service_pid = spawn_link(__MODULE__,:workflow_service,[])
+    send(String.to_atom("routing_service_register"), {:add_service, :session_identity, service_pid, [:authenticate_session] })
+    Process.register(service_pid, serviceName())
     {:ok, pid}
   end
   def init(%{}) do
@@ -26,54 +28,71 @@ defmodule SessionIdentityWorkflow do
           GenServer.call(:session_identity_workflow_worker, {:initialize_database})
           workflow_service_loop()
       false->  workflow_service_loop()
+      other-> workflow_service_loop()
     end
 
+  end
+  defp process_authenticate_workflow(msg, transaction_id, response_pid, connection_id) do
+    Task.Supervisor.start_child(:session_identity_task_supervisor, fn->
+      case GenServer.call(:session_identity_workflow_worker, {:authenticate, msg.principal, msg.password}) do
+        {:authenticate_success, user}->
+          { :ok, jwt, full_claims } = Guardian.encode_and_sign(user, :token)
+          {:ok, session} = GenServer.call(:session_identity_workflow_worker, {:get_session_by_connection_id, connection_id})
+          GenServer.cast(:session_identity_workflow_worker, {:set_account, session, user.id})
+          GenServer.cast(:account_identity_workflow_worker, {:set_login_session, session.id, user})
+          resp = %TcpAuthenticateSessionMessageResponse{authenticate_success: true, authenticate_token: jwt}
+          send response_pid, {:fullfill_request_transaction, resp, transaction_id}
+        {:authenticate_failure, msg}->
+          resp = %TcpAuthenticateSessionMessageResponse{authenticate_success: false, authenticate_message: msg}
+          send response_pid, {:fullfill_request_transaction, resp, transaction_id}
+        end
+    end)
+  end
+  defp process_create_session(connection_id, connection_response_node, response_pid) do
+    Task.Supervisor.start_child(:session_identity_task_supervisor, fn->
+      session = %SessionIdentityModel{ connection_id: connection_id, connection_response_node: Atom.to_string(connection_response_node)  }
+      created_session = GenServer.call(:session_identity_workflow_worker, {:create_session, session})
+          send response_pid, {:create_session_response, :ok, created_session}
+    end)
+  end
+  defp process_create_session(connection_id, connection_response_node) do
+    Task.Supervisor.start_child(:session_identity_task_supervisor, fn->
+      session = %SessionIdentityModel{ connection_id: connection_id, connection_response_node: Atom.to_string(connection_response_node)  }
+      created_session = GenServer.call(:session_identity_workflow_worker, {:create_session, session})
+      end)
+  end
+  defp process_remove_session_by_connection_id(connection_id, response_pid) do
+    Task.Supervisor.start_child(:session_identity_task_supervisor, fn->
+      GenServer.call(:session_identity_workflow_worker, {:remove_session_by_connection_id, connection_id})
+      send response_pid, {:remove_session_response, :ok}
+    end)
+  end
+  defp process_remove_session_by_connection_id(connection_id) do
+    Task.Supervisor.start_child(:session_identity_task_supervisor, fn->
+      {:ok} = GenServer.call(:session_identity_workflow_worker, {:remove_session_by_connection_id, connection_id})
+    end)
+  end
+  defp process_transaction(msg, transaction_id, response_pid, connection_id) do
+    case msg.header.message_id do
+      2->process_authenticate_workflow(msg, transaction_id, response_pid, connection_id)
+    end
   end
   defp workflow_service_loop() do
     receive do
       {:process_transaction, msg, transaction_id, response_pid, connection_id} ->
-        case msg.header.message_id do
-          2->
-            #tcp authenticate request
-            Task.Supervisor.start_child(:session_identity_task_supervisor, fn->
-              case GenServer.call(:session_identity_workflow_worker, {:authenticate, msg.principal, msg.password}) do
-                {:authenticate_success, user}->
-                  { :ok, jwt, full_claims } = Guardian.encode_and_sign(user, :token)
-                  {:ok, session} = GenServer.call(:session_identity_workflow_worker, {:get_session_by_connection_id, connection_id})
-                  GenServer.cast(:session_identity_workflow_worker, {:set_account, session, user.id})
-                  GenServer.cast(:account_identity_workflow_worker, {:set_login_session, session.id, user})
-                  resp = %TcpAuthenticateSessionMessageResponse{authenticate_success: true, authenticate_token: jwt}
-                  send response_pid, {:fullfill_request_transaction, resp, transaction_id}
-                {:authenticate_failure, msg}->
-                  resp = %TcpAuthenticateSessionMessageResponse{authenticate_success: false, authenticate_message: msg}
-                  send response_pid, {:fullfill_request_transaction, resp, transaction_id}
-                end
-            end)
-        end
+        process_transaction(msg, transaction_id, response_pid, connection_id)
         workflow_service_loop()
       {:create_session, connection_id, connection_response_node, response_pid} ->
-        Task.Supervisor.start_child(:session_identity_task_supervisor, fn->
-          session = %SessionIdentityModel{ connection_id: connection_id, connection_response_node: Atom.to_string(connection_response_node)  }
-          created_session = GenServer.call(:session_identity_workflow_worker, {:create_session, session})
-              send response_pid, {:create_session_response, :ok, created_session}
-          end)
+        process_create_session(connection_id, connection_response_node, response_pid)
         workflow_service_loop()
       {:create_session, connection_id, connection_response_node}->
-        Task.Supervisor.start_child(:session_identity_task_supervisor, fn->
-          session = %SessionIdentityModel{ connection_id: connection_id, connection_response_node: Atom.to_string(connection_response_node)  }
-          created_session = GenServer.call(:session_identity_workflow_worker, {:create_session, session})
-          end)
+        process_create_session(connection_id, connection_response_node)
         workflow_service_loop()
-      {:remove_session_by_connection_id, connectionId, response_pid} ->
-        Task.Supervisor.start_child(:session_identity_task_supervisor, fn->
-        GenServer.call(:session_identity_workflow_worker, {:remove_session_by_connection_id, connectionId})
-        send response_pid, {:remove_session_response, :ok}
-      end)
-      workflow_service_loop()
-      {:remove_session_by_connection_id,  connectionId} ->
-        Task.Supervisor.start_child(:session_identity_task_supervisor, fn->
-          {:ok} = GenServer.call(:session_identity_workflow_worker, {:remove_session_by_connection_id, connectionId})
-        end)
+      {:remove_session_by_connection_id, connection_id, response_pid} ->
+        process_remove_session_by_connection_id(connection_id, response_pid)
+        workflow_service_loop()
+      {:remove_session_by_connection_id,  connection_id} ->
+        process_remove_session_by_connection_id(connection_id)
         workflow_service_loop()
     end
 

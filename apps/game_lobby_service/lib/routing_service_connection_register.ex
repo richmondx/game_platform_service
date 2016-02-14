@@ -1,11 +1,13 @@
 defmodule RoutingServiceConnectionRegister do
+  @moduledoc """
+  """
   use GenServer
   require Logger
   def start_link() do
     {:ok, pid} = GenServer.start_link(__MODULE__, [], [])
     Process.register(pid, String.to_atom("routing_service_register_worker") )
-    serviceListener = spawn_link(__MODULE__, :service_register, [])
-    Process.register(serviceListener, String.to_atom("routing_service_register"))
+    service_listener = spawn_link(__MODULE__, :service_register, [])
+    Process.register(service_listener, String.to_atom("routing_service_register"))
     {:ok, pid}
   end
   def init(state) do

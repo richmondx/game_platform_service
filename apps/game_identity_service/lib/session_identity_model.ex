@@ -1,4 +1,6 @@
 defmodule SessionIdentityModel do
+  @moduledoc """
+  """
   use Ecto.Schema
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "session_identity_model" do

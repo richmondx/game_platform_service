@@ -1,11 +1,13 @@
 defmodule RoutingServiceRouter do
+  @moduledoc """
+  """
   use GenServer
   require Logger
   def start_link() do
     {:ok, pid} = GenServer.start_link(__MODULE__, [], [])
-    servicePid = spawn_link(__MODULE__,:service_router,[])
+    service_pid = spawn_link(__MODULE__,:service_router,[])
     Process.register(pid, String.to_atom("routing_service_router_worker") )
-    Process.register(servicePid, String.to_atom("routing_service_router"))
+    Process.register(service_pid, String.to_atom("routing_service_router"))
     {:ok, pid}
   end
 
@@ -19,7 +21,7 @@ defmodule RoutingServiceRouter do
         service_op = RoutingServiceRouterOperationFactory.getOperationByMessageId(message.header.message_id)
         case service_op.transaction do
           true->
-            
+
             send :routing_service_transaction, {:queue_transaction, message, service_op, connection_id }
         end
     end

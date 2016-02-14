@@ -1,43 +1,33 @@
 defmodule TcpMessageFactory do
+  @moduledoc """
+  """
   require Logger
   def toTcpMessage(bin) when is_binary(bin)  do
     case bin do
-      <<id ::size(8), data::binary>>->
-        case id do
-          2->
-            case data do
-              <<sz::size(32), msg::binary>> ->
-                case msg do
-                  <<principal_name::binary-size(sz), remainder::binary>> ->
-                    case remainder do
-                      <<sz_pass::size(32), msg_pass::binary>> ->
-                        case msg_pass do
-                          <<pass::binary-size(sz_pass), remain::binary>>->
-                            case remain do
-                              <<0::size(8), next_message::binary>>->
-                                {:ok, %TcpAuthenticateSessionMessage{principal: principal_name, password: pass}, next_message}
-                              <<0::size(8)>>->{:ok, %TcpAuthenticateSessionMessage{principal: principal_name, password: pass}, <<>>}
-                            end
-                        end
-                    end
-                end
-            end
-          0->
-            case data do
-              <<sz::size(32), msg::binary>> ->
-
-                case msg do
-                  <<echo_message::binary-size(sz), remainder::binary>> ->
-                    case remainder do
-                      <<0::size(8), next_message::binary>>->
-                        {:ok, %TcpEchoMessage{message: to_string(echo_message)}, next_message}
-                          <<0::size(8)>>->{:ok, %TcpEchoMessage{message: msg}, <<>>}
-                    end
-                  <<echo_message::binary>> ->
-                    {:continued, echo_message}
-                end
-            end
-        end
+      <<0 ::size(8), sz::size(32), msg::binary-size(sz), remainder::binary>> ->
+        build_echo_message(msg, remainder)
+      <<2 ::size(8), princ_size::size(32), principal_name::binary-size(princ_size), pass_size::size(32), password::binary-size(pass_size), remain>> ->
+        build_authenticate_session_message(principal_name, password, remain)
+      other-> Logger.error "Unknown TcpMessageFactory.toTcpMessage #{inspect other}"
     end
   end
+
+  defp build_echo_message(msg, remainder) do
+    case remainder do
+      <<0::size(8), next_message::binary>>->{:ok, %TcpEchoMessage{message: to_string(msg)}, next_message}
+      <<0::size(8)>>->{:ok, %TcpEchoMessage{message: msg}, <<>>}
+      0->{:ok, %TcpEchoMessage{message: msg}, <<>>}
+      other-> Logger.error "Unknown echo msg #{inspect other}"
+    end
+  end
+  defp build_authenticate_session_message(principal_name, pwd, remainder) do
+    case remainder do
+      <<0::size(8), next_message::binary>>->
+        {:ok, %TcpAuthenticateSessionMessage{principal: principal_name, password: pwd}, next_message}
+        <<0::size(8)>>->{:ok, %TcpAuthenticateSessionMessage{principal: principal_name, password: pwd}, <<>>}
+      0->{:ok, %TcpAuthenticateSessionMessage{principal: principal_name, password: pwd}, <<>>}
+      other->Logger.error "Unknown authenticate_session_message #{inspect other}"
+    end
+  end
+
 end

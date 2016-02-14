@@ -1,4 +1,6 @@
 defmodule IdentityService.Mixfile do
+  @moduledoc """
+  """
   use Mix.Project
 
   def project do

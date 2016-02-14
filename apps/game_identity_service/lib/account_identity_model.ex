@@ -1,4 +1,6 @@
 defmodule AccountIdentityModel do
+  @moduledoc """
+  """
   use Ecto.Schema
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "account_identity_model" do

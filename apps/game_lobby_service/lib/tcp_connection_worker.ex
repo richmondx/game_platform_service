@@ -1,4 +1,6 @@
 defmodule TcpConnectionWorker do
+  @moduledoc """
+  """
   require Logger
   def start_link(ref, socket, transport, opts) do
     connection_id = :erlang.unique_integer
@@ -7,7 +9,7 @@ defmodule TcpConnectionWorker do
     {:ok, pid}
   end
 
-  def init(ref, socket, connection_id, transport, _Opts = []) do
+  def init(ref, socket, connection_id, transport, _opts = []) do
     :ok = :ranch.accept_ack(ref)
     transport.setopts(socket, [nodelay: :true])
     responder_pid = spawn_link(__MODULE__, :responder_loop, [socket,  transport, [], 0])

@@ -1,4 +1,6 @@
 defmodule SessionIdentityTokenSerializer do
+  @moduledoc """
+  """
     @behaviour Guardian.Serializer
 
     alias IdentityRepo

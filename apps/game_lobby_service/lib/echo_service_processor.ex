@@ -1,12 +1,14 @@
 defmodule EchoServiceProcessor do
+  @moduledoc """
+  """
   use GenServer
   require Logger
   def start_link() do
     {:ok, pid} = GenServer.start_link(__MODULE__, [], [])
     Process.register(pid, String.to_atom("echo_service_worker") )
-    requestPid = spawn_link(__MODULE__,:service_requests,[])
-    Process.register(requestPid, String.to_atom("echo_service") )
-    send(String.to_atom("routing_service_register"), {:add_service, :echo, requestPid, [:echo] })
+    request_pid = spawn_link(__MODULE__,:service_requests,[])
+    Process.register(request_pid, String.to_atom("echo_service") )
+    send(String.to_atom("routing_service_register"), {:add_service, :echo, request_pid, [:echo] })
     {:ok, pid}
   end
   def init([]) do

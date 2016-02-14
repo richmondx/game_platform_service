@@ -1,4 +1,6 @@
 defmodule SessionIdentityServiceTest do
+  @moduledoc """
+  """
   use ExUnit.Case
   require Logger
   test "Create Session" do

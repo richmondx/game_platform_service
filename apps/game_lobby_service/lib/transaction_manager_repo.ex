@@ -1,4 +1,6 @@
 defmodule TransactionManagerRepo do
+  @moduledoc """
+  """
   use GenServer
   require Logger
   def start_link() do

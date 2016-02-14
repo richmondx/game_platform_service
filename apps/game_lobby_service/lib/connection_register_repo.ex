@@ -1,4 +1,6 @@
 defmodule ConnectionRegisterRepo do
+  @moduledoc """
+  """
   use GenServer
   require Logger
   def start_link() do
@@ -26,9 +28,9 @@ defmodule ConnectionRegisterRepo do
   end
 
 def handle_call({:get_service_by_op, service_op}, _from, state) do
-  opStr = Atom.to_string(service_op.service_operation)
-  service_id = case :ets.lookup(Map.get(state, :op_repo), opStr) do
-    [{^opStr, service_list}]->{:ok, List.first(service_list)}
+  op_str = Atom.to_string(service_op.service_operation)
+  service_id = case :ets.lookup(Map.get(state, :op_repo), op_str) do
+    [{^op_str, service_list}]->{:ok, List.first(service_list)}
     other->{:not_found}
   end
   case service_id do
@@ -51,24 +53,30 @@ def handle_call({:get_client_by_connection_id, connection_id}, _from, state) do
   end
 
 end
-  def handle_cast({:remove_pid, pid}, state) do
-    is_client = :ets.foldl(fn ({key, value}, acc)->
-      case (value.client_responder_pid == pid) do
-        true->{:true, value.client_id}
-        case->acc
-      end
-    end, {:false}, Map.get(state, :client_repo))
-    case is_client do
+
+defp isClient(state, pid) do
+  :ets.foldl(fn ({key, value}, acc)->
+    case (value.client_responder_pid == pid) do
+      true->{:true, value.client_id}
+      case->acc
+    end
+  end, {:false}, Map.get(state, :client_repo))
+end
+defp getServiceId(state, pid) do
+  :ets.foldl(fn ({key, value}, acc)->
+    case (value.service_entry_pid == pid) do
+      true->{:true, value.service_id}
+      case->acc
+    end
+  end, {:false}, Map.get(state, :service_repo))
+end
+def handle_cast({:remove_pid, pid}, state) do
+    case isClient(state, pid) do
       {:true, id}->
         send :session_identity_workflow, {:remove_session_by_connection_id, id}
-      :ets.delete(Map.get(state, :client_repo), build_client_key(id))
+        :ets.delete(Map.get(state, :client_repo), build_client_key(id))
       {:false}->
-        service_id = case :ets.foldl(fn ({key, value}, acc)->
-          case (value.service_entry_pid == pid) do
-            true->{:true, value.service_id}
-            case->acc
-          end
-        end, {:false}, Map.get(state, :service_repo)) do
+        service_id = case getServiceId(state, pid) do
           [service]->{:true, service.service_id}
           []->{:false}
         end
@@ -81,18 +89,18 @@ end
   def handle_cast( {:add_service, route}, state ) do
     service_key = build_service_key(route)
     for op<-route.service_operations do
-      operation_toStr = Atom.to_string(op)
-      case :ets.lookup(Map.get(state, :op_repo), operation_toStr ) do
-        [^operation_toStr, [services]]->:ets.insert(Map.get(state, :op_repo), {operation_toStr, [service_key|services]} )
-        []->:ets.insert(Map.get(state, :op_repo), {operation_toStr, [service_key]})
+      operation_to_str = Atom.to_string(op)
+      case :ets.lookup(Map.get(state, :op_repo), operation_to_str ) do
+        [^operation_to_str, [services]]->:ets.insert(Map.get(state, :op_repo), {operation_to_str, [service_key|services]} )
+        []->:ets.insert(Map.get(state, :op_repo), {operation_to_str, [service_key]})
       end
     end
     :ets.insert(Map.get(state, :service_repo), {service_key, route})
     {:noreply, state}
   end
   def handle_cast({:add_client, route}, state) do
-    clientId = build_client_key(route)
-    :ets.insert(Map.get(state, :client_repo) ,{clientId, route})
+    client_id = build_client_key(route)
+    :ets.insert(Map.get(state, :client_repo) ,{client_id, route})
     {:noreply, state}
   end
 

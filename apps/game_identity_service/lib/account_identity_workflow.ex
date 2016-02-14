@@ -1,12 +1,14 @@
 defmodule AccountIdentityWorkflow do
+  @moduledoc """
+  """
   use GenServer
   import Ecto.Query
   require Logger
   def start_link() do
     {:ok, pid} = GenServer.start_link(__MODULE__, %{}, [])
-    servicePid = spawn_link(__MODULE__,:account_identity_service,[])
+    service_pid = spawn_link(__MODULE__,:account_identity_service,[])
     Process.register(pid, name())
-    Process.register(servicePid, serviceName())
+    Process.register(service_pid, serviceName())
     {:ok, pid}
   end
   def name() do
@@ -25,6 +27,7 @@ defmodule AccountIdentityWorkflow do
           GenServer.call(:account_identity_workflow_worker, {:initialize_database})
           account_identity_service_loop()
       false->  account_identity_service_loop()
+      other-> account_identity_service_loop()
     end
 
   end
@@ -40,8 +43,8 @@ defmodule AccountIdentityWorkflow do
     end
   end
   def handle_call({:create_account, account}, _from, state ) do
-      userToCreate = Map.update!(account, :account_password, fn pwd->Aeacus.hashpwsalt(pwd) end)
-      user = IdentityRepo.insert!(userToCreate)
+      user_to_create = Map.update!(account, :account_password, fn pwd->Aeacus.hashpwsalt(pwd) end)
+      user = IdentityRepo.insert!(user_to_create)
       {:reply, {:ok, user}, state}
   end
 

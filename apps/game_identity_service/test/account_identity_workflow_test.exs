@@ -1,4 +1,6 @@
 defmodule AccountIdentityServiceTest do
+  @moduledoc """
+  """
   use ExUnit.Case
   test "Create Account" do
     GenServer.call(:account_identity_workflow_worker, {:initialize_database})
