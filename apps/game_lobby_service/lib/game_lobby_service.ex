@@ -10,7 +10,7 @@ defmodule LobbyService do
     children = [
       # Define workers and child supervisors to be supervised
       supervisor(RoutingServiceSupervisor, []),
-      worker(TcpConnection, []),
+      worker(TcpConnectionSupervisor, []),
       worker(EchoService, [])
     ]
 

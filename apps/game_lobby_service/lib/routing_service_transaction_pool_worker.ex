@@ -56,6 +56,7 @@ defmodule RoutingServiceTransactionPoolWorker do
   end)
   {:transaction, t} = Task.await(task)
     Task.Supervisor.start_child( :routing_service_task_supervisor , fn ->
+      Logger.info "received msg to send to receiver: #{inspect msg}"
       client = GenServer.call(:routing_service_register_worker, {:get_client_by_connection_id, t.connection_id})
       {name, c} = client
       send c.client_responder_pid, {:send_tcp_message, msg}

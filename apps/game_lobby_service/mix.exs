@@ -34,6 +34,8 @@ defmodule LobbyService.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:ranch, "~> 1.2"}, {:poolboy, "~> 1.5"},  {:credo, "~> 0.3", only: [:dev, :test]}]
+    [
+      {:game_locator_service, in_umbrella: true},
+      {:ranch, "~> 1.2"}, {:poolboy, "~> 1.5"},  {:credo, "~> 0.3", only: [:dev, :test]}]
   end
 end

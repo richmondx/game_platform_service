@@ -3,13 +3,13 @@ defmodule TcpConnectionWorker do
   """
   require Logger
   def start_link(ref, socket, transport, opts) do
-    connection_id = :erlang.unique_integer
+    connection_id = List.first(opts)#:erlang.unique_integer
     pid = spawn_link(__MODULE__, :init, [ref, socket, connection_id, transport, opts])
     Process.register(pid, String.to_atom("tcpconnection_worker_" <> Integer.to_string(connection_id) ) )
     {:ok, pid}
   end
 
-  def init(ref, socket, connection_id, transport, _opts = []) do
+  def init(ref, socket, connection_id, transport, opts) do
     :ok = :ranch.accept_ack(ref)
     transport.setopts(socket, [nodelay: :true])
     responder_pid = spawn_link(__MODULE__, :responder_loop, [socket,  transport, [], 0])
@@ -21,7 +21,7 @@ defmodule TcpConnectionWorker do
     Process.register(parser_pid, String.to_atom("tcpconnection_worker_parser_"<>Integer.to_string(connection_id)) )
     send String.to_atom("routing_service_register"), {:add_client, connection_id, responder_pid}
     Process.flag(:trap_exit, true)
-    loop(socket, transport, connection_id, parser_pid)
+    loop(socket, transport, connection_id, parser_pid, opts)
   end
   def responder_loop(socket,  transport, response_list, response_count) do
     if(response_count > Application.get_env(:tcp_connection_worker, :responder_force_flush_max)) do
@@ -96,10 +96,10 @@ defmodule TcpConnectionWorker do
       send :routing_service_router, {:route_message, msg, connection_id}
     end
   end
-  defp loop(socket, transport, connection_id, parser_loop_ref) do
+  defp loop(socket, transport, connection_id, parser_loop_ref, opts) do
     {:ok, packet} = case transport.recv(socket, 0, 50) do
       {:ok, packet}->{:ok, packet}
-      {:error, :timeout}->loop(socket, transport, connection_id, parser_loop_ref)
+      {:error, :timeout}->loop(socket, transport, connection_id, parser_loop_ref, opts)
     end
     hacked_packet = case packet do
       "05hello"->
@@ -107,6 +107,6 @@ defmodule TcpConnectionWorker do
       other->other
     end
     send(parser_loop_ref, {:parse_packet, hacked_packet})
-    loop(socket, transport, connection_id, parser_loop_ref)
+    loop(socket, transport, connection_id, parser_loop_ref, opts)
   end
 end
