@@ -56,10 +56,25 @@ defmodule RoutingServiceTransactionPoolWorker do
   end)
   {:transaction, t} = Task.await(task)
     Task.Supervisor.start_child( :routing_service_task_supervisor , fn ->
-      Logger.info "received msg to send to receiver: #{inspect msg}"
-      client = GenServer.call(:routing_service_register_worker, {:get_client_by_connection_id, t.connection_id})
-      {name, c} = client
-      send c.client_responder_pid, {:send_tcp_message, msg}
+      #Logger.info "received msg to send to receiver: #{inspect msg}"
+      #client = GenServer.call(:routing_service_register_worker, {:get_client_by_connection_id, t.connection_id})
+      #{name, c} = client
+      #send c.client_responder_pid, {:send_tcp_message, msg}
+      zoo_keeper_client = GenServer.call(:zookeeper_client_worker, {:get_client})
+      datapath = "/services/tcpconnection_receiver_worker/#{to_string(t.connection_id)}"
+      {:ok, {path, status}} = Zookeeper.Client.get(zoo_keeper_client, datapath)
+      path_data = String.split(path, ",")
+      {node, name} = List.foldl(path_data, {"",""}, fn ele, acc ->
+        [data_name, data_value] = String.split(ele, ":")
+        Logger.info "data_name: #{data_name}"
+        {acc_node, acc_name} = acc
+        case data_name do
+          "node"->{data_value, acc_name}
+          "name"->{acc_node, data_value}
+          other->acc
+        end
+      end)
+      GenServer.cast(String.to_atom(name), {:send_tcp_message, msg})
       GenServer.cast(:routing_service_transaction_repo, {:remove, t})
     end)
     {:noreply, state}

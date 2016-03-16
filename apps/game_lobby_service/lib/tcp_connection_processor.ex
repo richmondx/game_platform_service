@@ -29,12 +29,12 @@ defmodule TcpConnectionProcessor do
     Logger.info "ok"
     {listener_id, processor_id} = {List.first(opts), List.last(opts)}
     {:ok, worker_pid} = TcpConnectionProcessorWorker.start_link(processor_id, listener_id)
-    {:ok, receiver_pid} = TcpConnectionProcessorWorker.start_link(processor_id, listener_id, socket)
-    worker_name =  generateWorkerName(processor_id)
-    receiver_name = generateReceiverName(processor_id)
-    Process.register(worker_pid, worker_name)
-    Process.register(receiver_pid, receiver_name) 
-    Logger.info "start_link_processor: #{inspect worker_pid}, #{inspect worker_name}"
+    {:ok, receiver_pid} = TcpConnectionReceiveWorker.start_link(processor_id, listener_id, socket, transport)
+    #worker_name =  generateWorkerName(processor_id)
+    #receiver_name = generateReceiverName(processor_id)
+    #Process.register(worker_pid, worker_name)
+    #Process.register(receiver_pid, receiver_name)
+    #Logger.info "start_link_processor: #{inspect worker_pid}, #{inspect worker_name}"
     transport.setopts(socket, [nodelay: :true])
     loop(socket, transport, processor_id, opts)
   end

@@ -77,7 +77,9 @@ def handle_cast({:remove_pid, pid}, state) do
         :ets.delete(Map.get(state, :client_repo), build_client_key(id))
       {:false}->
         service_id = case getServiceId(state, pid) do
-          [service]->{:true, service.service_id}
+          [service]->
+            Logger.info "Remove #{inspect service.service_id}"
+            {:true, service.service_id}
           []->{:false}
         end
         case service_id do
