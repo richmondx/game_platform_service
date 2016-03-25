@@ -1,5 +1,6 @@
 defmodule TcpConnectionReceiveWorker do
   use GenServer
+  require Logger
   def start_link(processor_id, listener_id, socket, transport) do
     {:ok, pid} = GenServer.start_link(__MODULE__, %{processor_id: processor_id, listener_id: listener_id, socket: socket, transport: transport}, [])
     Process.register(pid, generateReceiverName(processor_id))
@@ -18,6 +19,7 @@ defmodule TcpConnectionReceiveWorker do
     {:ok, state}
   end
   def handle_cast({:send_tcp_message, msg}, state) do
+    Logger.info "received send_tcp_message for #{inspect msg} from for state #{inspect state}"
     socket = Map.get(state, :socket)
     transport = Map.get(state, :transport)
     bin_response = TcpParserProtocol.to_bin?(msg)

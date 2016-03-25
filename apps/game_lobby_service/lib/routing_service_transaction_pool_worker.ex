@@ -74,6 +74,7 @@ defmodule RoutingServiceTransactionPoolWorker do
           other->acc
         end
       end)
+      Logger.info "found name #{name} for #{inspect msg}"
       GenServer.cast(String.to_atom(name), {:send_tcp_message, msg})
       GenServer.cast(:routing_service_transaction_repo, {:remove, t})
     end)
